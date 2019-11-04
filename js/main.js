@@ -68,7 +68,7 @@ var modelScale = 1 / 2 / Math.PI / 6378137 / Math.cos(35.6814 * DEGREE_TO_RADIAN
 var lang = getLang();
 var today = new Date();
 var isUndergroundVisible = false;
-var isRealtime = true;
+var isRealtime = false;
 var isWeatherVisible = false;
 var rainTexture = new THREE.TextureLoader().load('images/raindrop.png');
 var trackingMode = 'helicopter';
@@ -281,11 +281,11 @@ Promise.all([
 	railDirectionRefData, trainTypeRefData, operatorRefData, airportRefData, flightStatusRefData, e
 ]) {
 
-mapboxgl.accessToken = 'pk.eyJ1IjoibmFnaXgiLCJhIjoiY2sxaTZxY2gxMDM2MDNjbW5nZ2h4aHB6ZyJ9.npSnxvMC4r5S74l8A9Hrzw';
+mapboxgl.accessToken = 'pk.eyJ1IjoiaHVhbmc2MzQ5IiwiYSI6ImNqaW11MGZmNjAxbTczdm1xc2ppc3k5ZDUifQ.LlKr81ADTfZ5Z9DAUuWYrg';
 
 var map = new mapboxgl.Map({
 	container: 'map',
-	style: 'data/osm-liberty.json',
+	style: 'mapbox://styles/huang6349/ck2clf6cr0knf1cpytcwbolxb?optimize=true',
 	attributionControl: true,
 	hash: true,
 	center: [139.7670, 35.6814],
@@ -417,8 +417,6 @@ map.once('load', function () {
 });
 
 map.once('styledata', function () {
-	map.setLayoutProperty('poi', 'text-field', '{name_' + (lang === 'ja' || lang === 'ko' ? lang : lang === 'zh' ? 'zh-Hans' : 'en') + '}');
-
 	[13, 14, 15, 16, 17, 18].forEach(function(zoom) {
 		var minzoom = zoom <= 13 ? 0 : zoom;
 		var maxzoom = zoom >= 18 ? 24 : zoom + 1;
@@ -442,7 +440,7 @@ map.once('styledata', function () {
 			lineWidthScale: lineWidthScale,
 			lineJointRounded: true,
 			opacity: .0625
-		}), 'building-3d');
+		}));
 		map.setLayerZoomRange('railways-ug-' + zoom, minzoom, maxzoom);
 		map.addLayer(new MapboxLayer({
 			id: 'stations-ug-' + zoom,
@@ -458,7 +456,7 @@ map.once('styledata', function () {
 			lineWidthScale: lineWidthScale,
 			getFillColor: [255, 255, 255, 179],
 			opacity: .0625
-		}), 'building-3d');
+		}));
 		map.setLayerZoomRange('stations-ug-' + zoom, minzoom, maxzoom);
 	});
 
@@ -467,7 +465,7 @@ map.once('styledata', function () {
 		return map.getCanvas().style.cursor;
 	};
 
-	map.addLayer(trainLayers.ug, 'building-3d');
+	map.addLayer(trainLayers.ug);
 
 	[13, 14, 15, 16, 17, 18].forEach(function(zoom) {
 		var minzoom = zoom <= 13 ? 0 : zoom;
@@ -491,7 +489,7 @@ map.once('styledata', function () {
 			},
 			minzoom: minzoom,
 			maxzoom: maxzoom
-		}, 'building-3d');
+		});
 		map.addLayer({
 			id: 'stations-og-' + zoom,
 			type: 'fill',
@@ -507,7 +505,7 @@ map.once('styledata', function () {
 			},
 			minzoom: minzoom,
 			maxzoom: maxzoom
-		}, 'building-3d');
+		});
 		map.addLayer({
 			id: 'stations-outline-og-' + zoom,
 			type: 'line',
@@ -523,12 +521,12 @@ map.once('styledata', function () {
 			},
 			minzoom: minzoom,
 			maxzoom: maxzoom
-		}, 'building-3d');
+		});
 	});
 
-	map.addLayer(trainLayers.og, 'building-3d');
+	map.addLayer(trainLayers.og);
 
-	map.addLayer(rainLayer, 'poi');
+	map.addLayer(rainLayer);
 
 	map.getStyle().layers.filter(function(layer) {
 		return layer.type === 'line' || layer.type.lastIndexOf('fill', 0) !== -1;
@@ -623,7 +621,7 @@ map.once('styledata', function () {
 			event.stopPropagation();
 		}
 	}, {
-		className: 'mapbox-ctrl-realtime mapbox-ctrl-realtime-active',
+		className: 'mapbox-ctrl-realtime',
 		title: dict['exit-realtime'],
 		eventHandler: function() {
 			isRealtime = !isRealtime;
