@@ -622,7 +622,7 @@ map.once('styledata', function () {
 		}
 	}, {
 		className: 'mapbox-ctrl-realtime',
-		title: dict['exit-realtime'],
+		title: dict['enter-realtime'],
 		eventHandler: function() {
 			isRealtime = !isRealtime;
 			this.title = dict[(isRealtime ? 'exit' : 'enter') + '-realtime'];
@@ -1346,187 +1346,187 @@ map.once('styledata', function () {
 	}
 
 	function loadRealtimeTrainData() {
-		Promise.all([
-			loadJSON(API_URL + 'odpt:TrainInformation?odpt:operator=odpt.Operator:JR-East,odpt.Operator:TWR,odpt.Operator:TokyoMetro,odpt.Operator:Toei,odpt.Operator:Keio'),
-			loadJSON(API_URL + 'odpt:Train?odpt:operator=odpt.Operator:JR-East,odpt.Operator:TokyoMetro,odpt.Operator:Toei')
-		]).then(function([trainInfoRefData, trainRefData]) {
-			realtimeTrainLookup = {};
+		// Promise.all([
+		// 	loadJSON(API_URL + 'odpt:TrainInformation?odpt:operator=odpt.Operator:JR-East,odpt.Operator:TWR,odpt.Operator:TokyoMetro,odpt.Operator:Toei,odpt.Operator:Keio'),
+		// 	loadJSON(API_URL + 'odpt:Train?odpt:operator=odpt.Operator:JR-East,odpt.Operator:TokyoMetro,odpt.Operator:Toei')
+		// ]).then(function([trainInfoRefData, trainRefData]) {
+		// 	realtimeTrainLookup = {};
 
-			trainRefData.forEach(function(trainRef) {
-				var delay = trainRef['odpt:delay'] * 1000;
-				var carComposition = trainRef['odpt:carComposition'];
-				var trainType = removePrefix(trainRef['odpt:trainType']);
-				var destination = removePrefix(trainRef['odpt:destinationStation']);
-				var id = adjustTrainID(removePrefix(trainRef['owl:sameAs']));
-				var train = trainLookup[id];
-				var activeTrain = activeTrainLookup[id];
-				var changed = false;
+		// 	trainRefData.forEach(function(trainRef) {
+		// 		var delay = trainRef['odpt:delay'] * 1000;
+		// 		var carComposition = trainRef['odpt:carComposition'];
+		// 		var trainType = removePrefix(trainRef['odpt:trainType']);
+		// 		var destination = removePrefix(trainRef['odpt:destinationStation']);
+		// 		var id = adjustTrainID(removePrefix(trainRef['owl:sameAs']));
+		// 		var train = trainLookup[id];
+		// 		var activeTrain = activeTrainLookup[id];
+		// 		var changed = false;
 
-				if (train) {
-					realtimeTrainLookup[id] = train;
-					if (delay && train.delay !== delay) {
-						train.delay = delay;
-						changed = true;
-					}
-					if (carComposition && train.carComposition !== carComposition) {
-						train.carComposition = carComposition;
-						changed = true;
-					}
-					if (trainType && train.y !== trainType) {
-						train.y = trainType;
-						changed = true;
-					}
-					if (train.ds && destination && train.ds[0] !== destination[0]) {
-						train.ds = destination;
-						changed = true;
-					}
-					if (changed && activeTrainLookup[id]) {
-						stopTrain(train);
-					}
-				}
-			});
+		// 		if (train) {
+		// 			realtimeTrainLookup[id] = train;
+		// 			if (delay && train.delay !== delay) {
+		// 				train.delay = delay;
+		// 				changed = true;
+		// 			}
+		// 			if (carComposition && train.carComposition !== carComposition) {
+		// 				train.carComposition = carComposition;
+		// 				changed = true;
+		// 			}
+		// 			if (trainType && train.y !== trainType) {
+		// 				train.y = trainType;
+		// 				changed = true;
+		// 			}
+		// 			if (train.ds && destination && train.ds[0] !== destination[0]) {
+		// 				train.ds = destination;
+		// 				changed = true;
+		// 			}
+		// 			if (changed && activeTrainLookup[id]) {
+		// 				stopTrain(train);
+		// 			}
+		// 		}
+		// 	});
 
-			// Reset railway information text
-			railwayRefData.forEach(function(railway) {
-				delete railway.status;
-				delete railway.text;
-			});
+		// 	// Reset railway information text
+		// 	railwayRefData.forEach(function(railway) {
+		// 		delete railway.status;
+		// 		delete railway.text;
+		// 	});
 
-			trainInfoRefData.forEach(function(trainInfoRef) {
-				var operatorID = removePrefix(trainInfoRef['odpt:operator']);
-				var railwayID = removePrefix(trainInfoRef['odpt:railway']);
-				var status = trainInfoRef['odpt:trainInformationStatus'];
-				var text = trainInfoRef['odpt:trainInformationText'];
+		// 	trainInfoRefData.forEach(function(trainInfoRef) {
+		// 		var operatorID = removePrefix(trainInfoRef['odpt:operator']);
+		// 		var railwayID = removePrefix(trainInfoRef['odpt:railway']);
+		// 		var status = trainInfoRef['odpt:trainInformationStatus'];
+		// 		var text = trainInfoRef['odpt:trainInformationText'];
 
-				// Train information text is provided in Japanese only
-				if (railwayID && status && status.ja &&
-					(operatorID === 'JR-East' || operatorID === 'TokyoMetro' || operatorID === 'Toei') &&
-					(status.ja.indexOf('見合わせ') !== -1 ||
-					status.ja.indexOf('折返し運転') !== -1 ||
-					status.ja.indexOf('運休') !== -1 ||
-					status.ja.indexOf('遅延') !== -1)) {
-					railway = railwayLookup[railwayID];
-					railway.status = status.ja;
-					railway.text = text.ja;
-					Object.keys(activeTrainLookup).forEach(function(key) {
-						var train = activeTrainLookup[key];
-						if (train.r === railwayID && !realtimeTrainLookup[train.t]) {
-							stopTrain(train);
-						}
-					});
-				}
-			});
+		// 		// Train information text is provided in Japanese only
+		// 		if (railwayID && status && status.ja &&
+		// 			(operatorID === 'JR-East' || operatorID === 'TokyoMetro' || operatorID === 'Toei') &&
+		// 			(status.ja.indexOf('見合わせ') !== -1 ||
+		// 			status.ja.indexOf('折返し運転') !== -1 ||
+		// 			status.ja.indexOf('運休') !== -1 ||
+		// 			status.ja.indexOf('遅延') !== -1)) {
+		// 			railway = railwayLookup[railwayID];
+		// 			railway.status = status.ja;
+		// 			railway.text = text.ja;
+		// 			Object.keys(activeTrainLookup).forEach(function(key) {
+		// 				var train = activeTrainLookup[key];
+		// 				if (train.r === railwayID && !realtimeTrainLookup[train.t]) {
+		// 					stopTrain(train);
+		// 				}
+		// 			});
+		// 		}
+		// 	});
 
-			refreshTrains();
-		});
+		// 	refreshTrains();
+		// });
 	}
 
 	function loadRealtimeFlightData() {
-		Promise.all([
-			loadJSON(API_URL + 'odpt:FlightInformationArrival?odpt:operator=odpt.Operator:NAA,odpt.Operator:HND-JAT,odpt.Operator:HND-TIAT'),
-			loadJSON(API_URL + 'odpt:FlightInformationDeparture?odpt:operator=odpt.Operator:NAA,odpt.Operator:HND-JAT,odpt.Operator:HND-TIAT')
-		]).then(function(flightRefData) {
-			var flightQueue = {};
+		// Promise.all([
+		// 	loadJSON(API_URL + 'odpt:FlightInformationArrival?odpt:operator=odpt.Operator:NAA,odpt.Operator:HND-JAT,odpt.Operator:HND-TIAT'),
+		// 	loadJSON(API_URL + 'odpt:FlightInformationDeparture?odpt:operator=odpt.Operator:NAA,odpt.Operator:HND-JAT,odpt.Operator:HND-TIAT')
+		// ]).then(function(flightRefData) {
+		// 	var flightQueue = {};
 
-			concat(flightRefData).forEach(function(flightRef) {
-				var id = removePrefix(flightRef['owl:sameAs']);
-				var flight = flightLookup[id];
-				var status = removePrefix(flightRef['odpt:flightStatus']);
-				var maxSpeed = MAX_FLIGHT_SPEED;
-				var acceleration = FLIGHT_ACCELERATION;
-				var departureAirport, arrivalAirport, runway, feature, departureTime, arrivalTime, duration;
+		// 	concat(flightRefData).forEach(function(flightRef) {
+		// 		var id = removePrefix(flightRef['owl:sameAs']);
+		// 		var flight = flightLookup[id];
+		// 		var status = removePrefix(flightRef['odpt:flightStatus']);
+		// 		var maxSpeed = MAX_FLIGHT_SPEED;
+		// 		var acceleration = FLIGHT_ACCELERATION;
+		// 		var departureAirport, arrivalAirport, runway, feature, departureTime, arrivalTime, duration;
 
-				if (!flight) {
-					if (status === 'Cancelled') {
-						return;
-					}
-					departureAirport = removePrefix(flightRef['odpt:departureAirport']);
-					arrivalAirport = removePrefix(flightRef['odpt:arrivalAirport']);
-					runway = departureAirport === 'NRT' ? departureAirport + '.34L.Dep' :
-						arrivalAirport === 'NRT' ? arrivalAirport + '.34R.Arr' :
-						departureAirport === 'HND' ? departureAirport + '.05.Dep' :
-						arrivalAirport === 'HND' ? arrivalAirport + '.34L.Arr' : undefined;
-					feature = featureLookup[runway];
-					if (feature) {
-						flight = flightLookup[id] = {
-							id: id,
-							n: flightRef['odpt:flightNumber'],
-							a: removePrefix(flightRef['odpt:airline']),
-							dp: departureAirport,
-							ar: arrivalAirport,
-							ds: removePrefix(flightRef['odpt:destinationAirport']),
-							or: removePrefix(flightRef['odpt:originAirport']),
-							runway: runway,
-							feature: feature
-						};
-					} else {
-						return;
-					}
-				}
-				merge(flight, {
-					s: status,
-					edt: flightRef['odpt:estimatedDepartureTime'],
-					adt: flightRef['odpt:actualDepartureTime'],
-					sdt: flightRef['odpt:scheduledDepartureTime'],
-					eat: flightRef['odpt:estimatedArrivalTime'],
-					aat: flightRef['odpt:actualArrivalTime'],
-					sat: flightRef['odpt:scheduledArrivalTime']
-				});
+		// 		if (!flight) {
+		// 			if (status === 'Cancelled') {
+		// 				return;
+		// 			}
+		// 			departureAirport = removePrefix(flightRef['odpt:departureAirport']);
+		// 			arrivalAirport = removePrefix(flightRef['odpt:arrivalAirport']);
+		// 			runway = departureAirport === 'NRT' ? departureAirport + '.34L.Dep' :
+		// 				arrivalAirport === 'NRT' ? arrivalAirport + '.34R.Arr' :
+		// 				departureAirport === 'HND' ? departureAirport + '.05.Dep' :
+		// 				arrivalAirport === 'HND' ? arrivalAirport + '.34L.Arr' : undefined;
+		// 			feature = featureLookup[runway];
+		// 			if (feature) {
+		// 				flight = flightLookup[id] = {
+		// 					id: id,
+		// 					n: flightRef['odpt:flightNumber'],
+		// 					a: removePrefix(flightRef['odpt:airline']),
+		// 					dp: departureAirport,
+		// 					ar: arrivalAirport,
+		// 					ds: removePrefix(flightRef['odpt:destinationAirport']),
+		// 					or: removePrefix(flightRef['odpt:originAirport']),
+		// 					runway: runway,
+		// 					feature: feature
+		// 				};
+		// 			} else {
+		// 				return;
+		// 			}
+		// 		}
+		// 		merge(flight, {
+		// 			s: status,
+		// 			edt: flightRef['odpt:estimatedDepartureTime'],
+		// 			adt: flightRef['odpt:actualDepartureTime'],
+		// 			sdt: flightRef['odpt:scheduledDepartureTime'],
+		// 			eat: flightRef['odpt:estimatedArrivalTime'],
+		// 			aat: flightRef['odpt:actualArrivalTime'],
+		// 			sat: flightRef['odpt:scheduledArrivalTime']
+		// 		});
 
-				departureTime = flight.edt || flight.adt || flight.sdt;
-				arrivalTime = flight.eat || flight.aat || flight.sat;
+		// 		departureTime = flight.edt || flight.adt || flight.sdt;
+		// 		arrivalTime = flight.eat || flight.aat || flight.sat;
 
-				if (arrivalTime) {
-					maxSpeed /= 2;
-					acceleration /= -2;
-				}
+		// 		if (arrivalTime) {
+		// 			maxSpeed /= 2;
+		// 			acceleration /= -2;
+		// 		}
 
-				duration = maxSpeed / Math.abs(acceleration) / 2 + flight.feature.properties.length / maxSpeed;
+		// 		duration = maxSpeed / Math.abs(acceleration) / 2 + flight.feature.properties.length / maxSpeed;
 
-				if (departureTime) {
-					flight.start = getTime(departureTime);
-					flight.standing = flight.start - STANDING_DURATION;
-					flight.end = flight.start + duration;
-				} else {
-					flight.start = flight.standing = getTime(arrivalTime) - duration;
-					flight.end = flight.start + duration + STANDING_DURATION;
-				}
-				flight.maxSpeed = maxSpeed;
-				flight.acceleration = acceleration;
+		// 		if (departureTime) {
+		// 			flight.start = getTime(departureTime);
+		// 			flight.standing = flight.start - STANDING_DURATION;
+		// 			flight.end = flight.start + duration;
+		// 		} else {
+		// 			flight.start = flight.standing = getTime(arrivalTime) - duration;
+		// 			flight.end = flight.start + duration + STANDING_DURATION;
+		// 		}
+		// 		flight.maxSpeed = maxSpeed;
+		// 		flight.acceleration = acceleration;
 
-				queue = flightQueue[flight.runway] = flightQueue[flight.runway] || [];
-				queue.push(flight);
-			});
+		// 		queue = flightQueue[flight.runway] = flightQueue[flight.runway] || [];
+		// 		queue.push(flight);
+		// 	});
 
-			Object.keys(flightQueue).forEach(function(key) {
-				var queue = flightQueue[key];
-				var latest = 0;
+		// 	Object.keys(flightQueue).forEach(function(key) {
+		// 		var queue = flightQueue[key];
+		// 		var latest = 0;
 
-				queue.sort(function(a, b) {
-					return a.start - b.start;
-				});
-				queue.forEach(function(flight) {
-					var delay = Math.max(flight.start, latest + MIN_FLIGHT_INTERVAL) - flight.start;
+		// 		queue.sort(function(a, b) {
+		// 			return a.start - b.start;
+		// 		});
+		// 		queue.forEach(function(flight) {
+		// 			var delay = Math.max(flight.start, latest + MIN_FLIGHT_INTERVAL) - flight.start;
 
-					if (delay) {
-						flight.start += delay;
-						flight.standing += delay;
-						flight.end += delay;
-					}
-					latest = flight.start;
-				});
-			});
+		// 			if (delay) {
+		// 				flight.start += delay;
+		// 				flight.standing += delay;
+		// 				flight.end += delay;
+		// 			}
+		// 			latest = flight.start;
+		// 		});
+		// 	});
 
-			refreshFlights();
-		});
+		// 	refreshFlights();
+		// });
 	}
 
 	function loadNowCastData() {
-		loadJSON('https://mini-tokyo.appspot.com/nowcast').then(function(data) {
-			nowCastData = data;
-			emitterBounds = {};
-			updateEmitterQueue();
-		});
+		// loadJSON('https://mini-tokyo.appspot.com/nowcast').then(function(data) {
+		// 	nowCastData = data;
+		// 	emitterBounds = {};
+		// 	updateEmitterQueue();
+		// });
 	}
 
 	function updateEmitterQueue() {
